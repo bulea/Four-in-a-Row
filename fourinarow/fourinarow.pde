@@ -8,9 +8,9 @@ int XREDPILE=int(SPACESIZE / 2); int YREDPILE=480 - int(3 * SPACESIZE / 2);
 int XYELLOWPILE=640 - int(3 * SPACESIZE / 2); int YYELLOWPILE=480 - int(3 * SPACESIZE / 2);
 
 // variables
-PImage backg, red, yellow, boardim, arrow, computer, human, tie, mainmenu, rules;
+PImage backg, red, yellow, boardim, arrow, arrow2, computer, human, human1, human2, tie, mainmenu, rules;
 PFont orbitron;
-int[][] board = new int[BOARDHEIGHT][BOARDWIDTH]; // human: 1, computer: -1
+int[][] board = new int[BOARDHEIGHT][BOARDWIDTH]; // human1: 1, computer: -1, human2: 2
 
 int column_g;
 int xcor, ycor; // coordinates of the currently active tile
@@ -18,7 +18,7 @@ int step;
 float speed, dropSpeed;
 
 int beginning, end;
-int turn; // human: 1, computer: -1
+int turn; // human1: 1, computer: -1, human2: 2
 int pressed;
 int gameScreen; // mainMenu: 0, game: 1, endGame: 2, rules: 3
 boolean showHelp, isFirstGame;
@@ -27,6 +27,15 @@ int tokenx, tokeny;
 boolean mouseR;
 int winner;
 boolean win;
+
+boolean fillEasy, fillMedium, fillHard;
+boolean fillThemeLight, fillThemeDark;
+
+boolean multiplayer;
+boolean showHelp2;
+boolean showingHelp;
+
+int countFirst, countSecond;
 
 int r, t; // r: rules, t==0: dark theme, t==1; light theme
 
@@ -44,10 +53,14 @@ void setup(){
   boardim.resize(SPACESIZE, SPACESIZE);
   
   arrow=loadImage("arrow.png");
+  arrow2=loadImage("arrow2.png");
   arrow.resize(int(SPACESIZE*3.75),int(1.5*SPACESIZE));
+  arrow2.resize(int(SPACESIZE*3.75),int(1.5*SPACESIZE));
   computer=loadImage("computer.png");
   human=loadImage("human.png");
   tie=loadImage("tie.png");
+  human1=loadImage("human1.png");
+  human2=loadImage("human2.png");
   
   mainmenu=loadImage("mainmenu.png");
   mainmenu.resize(640, 480);
@@ -70,6 +83,21 @@ void setup(){
   r=0;
   
   win=false;
+  
+  fillEasy = true;
+  fillMedium = false;
+  fillHard = false;
+  
+  fillThemeLight = false;
+  fillThemeDark = false;
+  
+  multiplayer = false;
+  
+  showHelp = true;
+  showHelp2 = true;
+  
+  countFirst = 0;
+  countSecond = 0;
 }
 
 void draw(){
@@ -78,43 +106,60 @@ void draw(){
     
     rectMode(CENTER);
     stroke(185, 59, 50, 50);
-    if (overRect(70, 150, 160, 100))
+    if (overRect(70, 190, 160, 60))
       fill(185, 59, 50);
     else
       fill(185, 59, 50, 50);
-    rect(150, 200, 160, 100);
-    if (overRect(240, 150, 160, 100))
+    rect(150, 220, 160, 60);
+    if (overRect(240, 190, 160, 60))
       fill(185, 59, 50);
     else
       fill(185, 59, 50, 50);
-    rect(320, 200, 160, 100);
-    if (overRect(410, 150, 160, 100))
+    rect(320, 220, 160, 60);
+    if (overRect(410, 190, 160, 60))
       fill(185, 59, 50);
     else
       fill(185, 59, 50, 50);
-    rect(490, 200, 160, 100);
+    rect(490, 220, 160, 60);
     textFont(orbitron);
     fill(0, 0, 0);
     textAlign(CENTER, CENTER);
-    text("PLAY", 150, 200);
-    text("RULES", 320, 200);
-    text("QUIT", 490, 200);
+    text("PLAY", 150, 220);
+    text("RULES", 320, 220);
+    text("QUIT", 490, 220);
+    
+    stroke(185, 59, 50, 50);
+    if (overRect(155, 110, 160, 60) || multiplayer == false)
+      fill(185, 59, 50);
+    else
+      fill(185, 59, 50, 50);
+    rect(235, 140, 160, 60);
+    if (overRect(325, 110, 160, 60) || multiplayer == true)
+      fill(185, 59, 50);
+    else
+      fill(185, 59, 50, 50);
+    rect(405, 140, 160, 60);
+    textFont(orbitron);
+    fill(0, 0, 0);
+    textAlign(CENTER, CENTER);
+    text("SINGLE\nPLAYER", 235, 140);
+    text("MULTI\nPLAYER", 405, 140);
     
     stroke(206, 66, 56);
-    if (overRect(195, 313, 250, 35))
-      fill(185, 59, 50);
+    if (overRect(195, 313, 250, 35) || fillEasy == true)
+      fill(165, 70, 70);
     else
-      fill(206, 66, 56);
+      fill(206, 40, 40);
     rect(320, 330, 250, 35);
-    if (overRect(195, 358, 250, 35))
-      fill(185, 59, 50);
+    if (overRect(195, 358, 250, 35) || fillMedium == true)
+      fill(165, 70, 70);
     else
-      fill(206, 66, 56);
+      fill(206, 40, 40);
     rect(320, 375, 250, 35);
-    if (overRect(195, 403, 250, 35))
-      fill(185, 59, 50);
+    if (overRect(195, 403, 250, 35) || fillHard == true)
+      fill(165, 70, 70);
     else
-      fill(206, 66, 56);
+      fill(206, 40, 40);
     rect(320, 420, 250, 35);
     textFont(orbitron);
     fill(0, 0, 0);
@@ -123,35 +168,57 @@ void draw(){
     text("Hard", 320, 420);
     
     fill(0,0,0,0);
-    if (overCircle(40, 423, 62)) 
+    if (overCircle(40, 423, 62) || fillThemeDark == true) 
       stroke(255);
     else 
       noStroke();
     ellipse(40, 423, 62, 62);
-    if (overCircle(108, 423, 62)) 
+    if (overCircle(108, 423, 62) || fillThemeLight == true) 
       stroke(0);
     else 
       noStroke();
     ellipse(108, 423, 62, 62);
 
     if (mousePressed){
-      if (overRect(195, 313, 250, 35))
+      if (overRect(195, 313, 250, 35)){
         DIFFICULTY=1;
-      else if (overRect(195, 358, 250, 35))
+        fillEasy = true;
+        fillMedium = false;
+        fillHard = false;
+      }
+      else if (overRect(195, 358, 250, 35)){
         DIFFICULTY=2;
-      else if (overRect(195, 403, 250, 35))
+        fillEasy = false;
+        fillMedium = true;
+        fillHard = false;
+      }
+      else if (overRect(195, 403, 250, 35)){
         DIFFICULTY=3;
-      else if (overRect(70, 150, 160, 100))
+        fillEasy = false;
+        fillMedium = false;
+        fillHard = true;
+      }
+      else if (overRect(70, 190, 160, 60))
         gameScreen=1;
-      else if (overRect(240, 150, 160, 100))
+      else if (overRect(240, 190, 160, 60))
         gameScreen=3;
-      else if (overRect(410, 150, 160, 100))
+      else if (overRect(410, 190, 160, 60))
         exit();
       else if (overCircle(40, 423, 62)){
         darkTheme(); t=0;
+        fillThemeDark = true;
+        fillThemeLight = false;
       }
       else if (overCircle(108, 423, 62)){
         lightTheme(); t=1;
+        fillThemeLight = true;
+        fillThemeDark = false;
+      }
+      else if (overRect(155, 110, 160, 60)){
+        multiplayer = false;
+      }
+      else if (overRect(325, 110, 160, 60)){
+        multiplayer = true;
       }
     }
   }
@@ -161,159 +228,340 @@ void draw(){
     drawTile(xcor,ycor,turn);
     drawBoard(board);
     
-    if (showHelp)
+    /*if (showHelp)
       image(arrow, int(SPACESIZE / 2)+SPACESIZE, 470 - int(3 * SPACESIZE / 2));
+    if(multiplayer == true && showHelp2){
+      image(arrow2, width - int(SPACESIZE / 2)-SPACESIZE - arrow2.width, 470 - int(3 * SPACESIZE / 2));
+    }*/
   }
   
   if (gameScreen==1){
-    if (beginning==1){
-      if (isFirstGame){
-        turn=-1; // computer: -1
-        showHelp=true;
-      }
-      else{
-        if (round(random(0,1))==0)
-          turn=-1;
-        else
-          turn=1;
-        showHelp=false;
+    if(multiplayer == false){
+      if (beginning==1){
+        if (isFirstGame){
+          turn=-1; // computer: -1
+          showHelp=true;
+        }
+        else{
+          if (round(random(0,1))==0)
+            turn=-1;
+          else
+            turn=1;
+          showHelp=false;
+        }
+      
+        getNewBoard();
+        step=0;
+        if(turn==1){
+          xcor=XREDPILE;
+          ycor=YREDPILE;
+        }
+        else{
+          xcor=XYELLOWPILE;
+          ycor=YYELLOWPILE;
+        }
+        beginning=0;
       }
     
-      getNewBoard();
-      step=0;
-      if(turn==1){
-        xcor=XREDPILE;
-        ycor=YREDPILE;
-      }
-      else{
-        xcor=XYELLOWPILE;
-        ycor=YYELLOWPILE;
-      }
-      beginning=0;
-    }
-    
-    if(turn==1){ // human
-      humanMove=true;
-      
-      textFont(orbitron);
-      if(t==0) fill(246, 27, 31);
-      else fill(80, 7, 45);
-      text("Your turn!", 320, 40);
-      
-      if (step==0){
-          if (mousePressed && draggingToken==false && mouseX>XREDPILE && mouseX<XREDPILE+SPACESIZE
-          && mouseY>YREDPILE && mouseY<YREDPILE+SPACESIZE){
-          // start of dragging on red token pile
-            draggingToken=true;
-            xcor=mouseX-SPACESIZE/2;
-            ycor=mouseY-SPACESIZE/2;
-           }
-          if (mouseR){
-            column_g=(int)((xcor+SPACESIZE/2-XMARGIN)/SPACESIZE);
-            if (isValidMove(board, column_g)){
-              dropSpeed=1.0;
-              step=1;
+      if(turn==1){ // human
+        humanMove=true;
+        
+        textFont(orbitron);
+        if(t==0) fill(246, 27, 31);
+        else fill(80, 7, 45);
+        text("Your turn!", 320, 40);
+        
+        if (step==0){
+            if (mousePressed && draggingToken==false && mouseX>XREDPILE && mouseX<XREDPILE+SPACESIZE
+            && mouseY>YREDPILE && mouseY<YREDPILE+SPACESIZE){
+            // start of dragging on red token pile
+              draggingToken=true;
+              xcor=mouseX-SPACESIZE/2;
+              ycor=mouseY-SPACESIZE/2;
+             }
+            if (mouseR){
+              column_g=(int)((xcor+SPACESIZE/2-XMARGIN)/SPACESIZE);
+              if (isValidMove(board, column_g)){
+                dropSpeed=1.0;
+                step=1;
+              }
             }
+        }
+        else if (step==1){
+          draggingToken=false;
+          mouseR=false;  
+        
+          int row=getLowestEmptySpace(board, column_g);
+        
+          if(int((ycor+int(dropSpeed)-YMARGIN) / SPACESIZE)<row){
+            ycor+=int(dropSpeed);
+            dropSpeed+=0.5;
           }
+          else step=2;
+        }
+        else if (step==2){
+          makeMove(board, 1, column_g);
+          showHelp=false;
+          if (isWinner(board, 1)){
+            winner=1;
+            countFirst++;
+            gameScreen=2; // RESTART
+            win=true;
+          }
+          turn=-1;
+          humanMove=false;
+          xcor = XYELLOWPILE;
+          ycor = YYELLOWPILE;
+          step=0;
+        }
       }
-      else if (step==1){
-        draggingToken=false;
-        mouseR=false;  
+      else{ // computer
+        textFont(orbitron);
+        if(t==0) fill(246, 27, 31);
+        else fill(80, 7, 45);
+        text("Computer's turn!", 320, 40);
       
-        int row=getLowestEmptySpace(board, column_g);
-      
-        if(int((ycor+int(dropSpeed)-YMARGIN) / SPACESIZE)<row){
-          ycor+=int(dropSpeed);
-          dropSpeed+=0.5;
+        if (step==0){
+          column_g=getComputerMove(DIFFICULTY);
+          dropSpeed=1.0;
+          speed=1.0;
+          xcor=XYELLOWPILE;
+          ycor=YYELLOWPILE;
+          step=1;
         }
-        else step=2;
-      }
-      else if (step==2){
-        makeMove(board, 1, column_g);
-        showHelp=false;
-        if (isWinner(board, 1)){
-          winner=1;
-          gameScreen=2; // RESTART
-          win=true;
+        else if (step==1){  
+          if (ycor>(YMARGIN - SPACESIZE)){
+            speed+=0.1;
+            ycor-=int(speed);
+          }
+          else step=2;
         }
-        turn=-1;
-        humanMove=false;
-        xcor = XYELLOWPILE;
-        ycor = YYELLOWPILE;
-        step=0;
-      }
-    }
-    else{ // computer
-      textFont(orbitron);
-      if(t==0) fill(246, 27, 31);
-      else fill(80, 7, 45);
-      text("Computer's turn!", 320, 40);
-    
-      if (step==0){
-        column_g=getComputerMove(DIFFICULTY);
-        dropSpeed=1.0;
-        speed=1.0;
-        xcor=XYELLOWPILE;
-        ycor=YYELLOWPILE;
-        step=1;
-      }
-      else if (step==1){  
-        if (ycor>(YMARGIN - SPACESIZE)){
-          speed+=0.1;
-          ycor-=int(speed);
+        else if (step==2){
+          if (xcor>(XMARGIN + column_g*SPACESIZE+10)){
+            xcor-=int(speed);
+            speed+=0.1;
+          }
+          else {
+            xcor=XMARGIN + column_g*SPACESIZE; 
+            step=3;
+          }
         }
-        else step=2;
-      }
-      else if (step==2){
-        if (xcor>(XMARGIN + column_g*SPACESIZE+10)){
-          xcor-=int(speed);
-          speed+=0.1;
-        }
-        else {
-          xcor=XMARGIN + column_g*SPACESIZE; 
-          step=3;
-        }
-      }
-      else if (step==3){
-        int row=getLowestEmptySpace(board, column_g);
-
-        if (int((ycor+int(dropSpeed)-YMARGIN) / SPACESIZE)<row){
-          ycor+=int(dropSpeed);
-          dropSpeed+=0.5;
-        }
-        else step=4;
-      }
-      else if (step==4){
-        makeMove(board, -1, column_g);
-        if (isWinner(board, -1)){
-          winner=-1;
-          gameScreen=2; // RESTART
-          win=true;
-        }
-        turn=1;
-        step=0;
-        xcor=XREDPILE;
-        ycor=YREDPILE;
-      }
-    }
+        else if (step==3){
+          int row=getLowestEmptySpace(board, column_g);
   
-    if (!win && isBoardFull(board)){
-      winner=0;
-      gameScreen=2; // RESTART
+          if (int((ycor+int(dropSpeed)-YMARGIN) / SPACESIZE)<row){
+            ycor+=int(dropSpeed);
+            dropSpeed+=0.5;
+          }
+          else step=4;
+        }
+        else if (step==4){
+          makeMove(board, -1, column_g);
+          if (isWinner(board, -1)){
+            winner=-1;
+            countSecond++;
+            gameScreen=2; // RESTART
+            win=true;
+          }
+          turn=1;
+          step=0;
+          xcor=XREDPILE;
+          ycor=YREDPILE;
+        }
+      }
+    
+      if (!win && isBoardFull(board)){
+        winner=0;
+        gameScreen=2; // RESTART
+      } 
+    }
+    
+    
+    else if (multiplayer == true){
+      if (beginning==1){
+        if (isFirstGame){
+          turn=1; // human1: 1
+        }
+        else{
+          if (round(random(0,1))==0)
+            turn=1;
+          else
+            turn=2;
+        }
+      
+        getNewBoard();
+        step=0;
+        if(turn==1){
+          xcor=XREDPILE;
+          ycor=YREDPILE;
+        }
+        else{
+          xcor=XYELLOWPILE;
+          ycor=YYELLOWPILE;
+        }
+        beginning=0;
+      }
+    
+      humanMove=true;
+      if(turn==1){ // human1
+        
+        textFont(orbitron);
+        if(t==0) fill(246, 27, 31);
+        else fill(80, 7, 45);
+        text("Player 1 turn!", 320, 40);
+        
+        if (showHelp == true){
+          image(arrow, int(SPACESIZE / 2)+SPACESIZE, 470 - int(3 * SPACESIZE / 2));
+        }
+        if (step==0){
+            if (mousePressed && draggingToken==false && mouseX>XREDPILE && mouseX<XREDPILE+SPACESIZE
+            && mouseY>YREDPILE && mouseY<YREDPILE+SPACESIZE){
+            // start of dragging on red token pile
+              draggingToken=true;
+              xcor=mouseX-SPACESIZE/2;
+              ycor=mouseY-SPACESIZE/2;
+             }
+            if (mouseR){
+              column_g=(int)((xcor+SPACESIZE/2-XMARGIN)/SPACESIZE);
+              if (isValidMove(board, column_g)){
+                dropSpeed=1.0;
+                step=1;
+              }
+            }
+        }
+        else if (step==1){
+          draggingToken=false;
+          mouseR=false;  
+        
+          int row=getLowestEmptySpace(board, column_g);
+        
+          if(int((ycor+int(dropSpeed)-YMARGIN) / SPACESIZE)<row){
+            ycor+=int(dropSpeed);
+            dropSpeed+=0.5;
+          }
+          else step=2;
+        }
+        else if (step==2){
+          makeMove(board, 1, column_g);
+          showHelp=false;
+          if (isWinner(board, 1)){
+            winner=1;
+            countFirst++;
+            gameScreen=2; // RESTART
+            win=true;
+          }
+          turn=2;
+          xcor = XYELLOWPILE;
+          ycor = YYELLOWPILE;
+          step=0;
+        }
+      }
+      else if (turn == 2){ // human2
+        textFont(orbitron);
+        if(t==0) fill(246, 27, 31);
+        else fill(80, 7, 45);
+        text("Player 2 turn!", 320, 40);
+        
+        if (showHelp2 == true){
+          image(arrow2, width - int(SPACESIZE / 2)-SPACESIZE - arrow2.width, 470 - int(3 * SPACESIZE / 2));
+        }
+        if (step==0){
+            if (mousePressed && draggingToken==false && mouseX>XYELLOWPILE && mouseX<XYELLOWPILE+SPACESIZE
+            && mouseY>YYELLOWPILE && mouseY<YYELLOWPILE+SPACESIZE){
+            // start of dragging on yellow token pile
+              draggingToken=true;
+              xcor=mouseX-SPACESIZE/2;
+              ycor=mouseY-SPACESIZE/2;
+             }
+            if (mouseR){
+              column_g=(int)((xcor+SPACESIZE/2-XMARGIN)/SPACESIZE);
+              if (isValidMove(board, column_g)){
+                dropSpeed=1.0;
+                step=1;
+              }
+            }
+        }
+        else if (step==1){
+          draggingToken=false;
+          mouseR=false;  
+        
+          int row=getLowestEmptySpace(board, column_g);
+        
+          if(int((ycor+int(dropSpeed)-YMARGIN) / SPACESIZE)<row){
+            ycor+=int(dropSpeed);
+            dropSpeed+=0.5;
+          }
+          else step=2;
+        }
+        else if (step==2){
+          makeMove(board, 2, column_g);
+          showHelp2=false;
+          if (isWinner(board, 2)){
+            winner=2;
+            countSecond++;
+            gameScreen=2; // RESTART
+            win=true;
+          }
+          turn=1;
+          xcor = XREDPILE;
+          ycor = YREDPILE;
+          step=0;
+        }
+      }
+    
+      if (!win && isBoardFull(board)){
+        winner=0;
+        gameScreen=2; // RESTART
+      } 
+    }
+    
+    rectMode(CENTER);
+    stroke(185, 59, 50, 50);
+    if (overRect(240, 410, 160, 60))
+      fill(185, 59, 50);
+    else
+      fill(185, 59, 50, 50);
+    rect(320, 440, 160, 60);
+    
+    textFont(orbitron);
+    if(t==0) fill(246, 27, 31);
+        else fill(80, 7, 45);
+    text("Main Menu", 320, 440);
+    text(countFirst, XREDPILE+20, 40);
+    text(countSecond, XYELLOWPILE+20, 40);
+    
+    if (mousePressed){
+      if (overRect(240, 410, 160, 60)){
+        getNewBoard();
+        setup();
+        gameScreen = 0;
+      }
     }
   }
   
   if(gameScreen==2){
      isFirstGame=false;
      imageMode(CENTER);
-     if (winner==1)
-       image(human, 640/2, 480/2);
-     else if (winner==-1)
-       image(computer, 640/2, 480/2);
-     else
-       image(tie, 640/2, 480/2);
-     imageMode(CORNER);
-     win=false;
+     if (multiplayer == false){
+       if (winner==1)
+         image(human, 640/2, 480/2);
+       else if (winner==-1)
+         image(computer, 640/2, 480/2);
+       else
+         image(tie, 640/2, 480/2);
+       imageMode(CORNER);
+       win=false;
+     }
+     else if (multiplayer == true){
+       if (winner==1)
+         image(human1, 640/2, 480/2);
+       else if (winner==2)
+         image(human2, 640/2, 480/2);
+       else
+         image(tie, 640/2, 480/2);
+       imageMode(CORNER);
+       win=false;
+     }
   }
   
   if(gameScreen==3){
@@ -337,10 +585,11 @@ boolean overCircle(int x, int y, int diameter) {
 }
 
 void mouseClicked(){
-	if (gameScreen==2){
-		beginning=1;
-    gameScreen=0;
-	}
+  if (gameScreen==2){
+    //beginning=1;
+    getNewBoard();
+    gameScreen=1;
+  }
   if (gameScreen==3 && r>5){
     gameScreen=0;
     r=0;
@@ -380,7 +629,7 @@ void drawBoard(int[][] currBoard){
   for (int j=0 ; j<BOARDWIDTH ; ++j){
     for (int i=0 ; i<BOARDHEIGHT ; ++i){
       if (currBoard[i][j]==1) image(red, x, y);
-      else if (currBoard[i][j]==-1) image(yellow, x, y);
+      else if (currBoard[i][j]==-1 || currBoard[i][j]==2) image(yellow, x, y);
       image(boardim, x, y);
       y+=SPACESIZE;
     }
@@ -393,8 +642,8 @@ void drawBoard(int[][] currBoard){
 }
 
 void drawTile(int x, int y, int player){
-  if (player==-1) image(yellow, x, y);
-  else image(red, x, y);
+  if (player==1) image(red, x, y);
+  else image(yellow, x, y);
 }
 
 void getNewBoard(){
